@@ -22,7 +22,8 @@ int cycle_cont();
 int interrupt();
 
 void loop() {
-
+/* Up here include attachlnterrupt (digitalPinToInterrupt (buttonPin), (name of function we want activated), 
+FALLING (or rising depending on button type)); */
   //manual mode
   if (switch is flipped to manual){
     key == MANUAL_STATE;
@@ -96,3 +97,4 @@ int cycle_cont(){
 int interrupt(){
   return 1;
 }
+
