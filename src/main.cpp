@@ -8,12 +8,16 @@ int AUTO_STATE = 2;
 int key = IDLE_STATE;
 
 bool dispatch = false;
-bool estop = false;
 bool misc = false;
 
-//initializing break-beam sensors
-bool lift_sensor = false;
-bool break_sensor = false;
+const int liftSensorPin = 1;
+const int breakSensorPin = 2;
+
+const int switchPin = 3;
+const int BlueButtonPin = 4;
+const int GreenButtonPin = 5;
+const int YellowButtonPin = 6;
+
 
 int cycle_once();
 int break_run();
@@ -21,16 +25,39 @@ int jog_lift();
 int cycle_cont();
 int interrupt();
 
+void setup(){
+
+  //Activating pin used for lift sensor
+  pinMode(liftSensorPin, INPUT);
+
+  //Activating pin used for break run sensor
+  pinMode(breakSensorPin, INPUT);
+
+  //Activating pinn used for Key-Lock switch
+  pinMode(switchPin, INPUT_PULLUP);
+
+  //Activating pin used for blue button on control panel
+  pinMode(BlueButtonPin, INPUT);
+
+  //Activating pin used for green button on control panel
+  pinMode(GreenButtonPin, INPUT);
+
+  //Activating pin used for yellow button on control panel
+  pinMode(YellowButtonPin, INPUT);
+}
+
 void loop() {
 /* Up here include attachlnterrupt (digitalPinToInterrupt (buttonPin), (name of function we want activated), 
 FALLING (or rising depending on button type)); */
   //manual mode
-  if (switch is flipped to manual){
-    key == MANUAL_STATE;
+
+  int switchState = digitalRead(switchPin);
+  if (switchState = HIGH){
+    key = MANUAL_STATE;
   }
 
   //auto mode
-  if (switch is flipped to auto){
+  if (switchState = LOW){
     key = AUTO_STATE;
   }
   
@@ -38,7 +65,7 @@ FALLING (or rising depending on button type)); */
     cycle_once;
     }
 
-    if (break_sensor == true){
+    if (digitalRead(breakSensorPin) == HIGH){
       break_run;
     }
     return;
@@ -52,7 +79,7 @@ FALLING (or rising depending on button type)); */
 
   while (!misc) {
     cycle_cont;
-    if (break_sensor == true){
+    if (digitalRead(breakSensorPin) == HIGH){
       break_run;
     }
   }
@@ -90,11 +117,6 @@ int cycle_cont(){
       interrupt;
       return 0;
     }
-  return 1;
-}
-
-//Represent sending the signal for the e-stop to stop the ride
-int interrupt(){
   return 1;
 }
 
