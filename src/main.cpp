@@ -22,7 +22,7 @@ const int switchPin = 3;
 const int BlueButtonPin = 4;
 const int GreenButtonPin = 5;
 const int YellowButtonPin = 6;
-const int RedButtonPin = 7; //verify if this is an interrupt pin
+const int RedButtonPin = 18; //verify if this is an interrupt pin
 const int LiftMotorPin = 8;
 const int BreakMotorPin = 9;
 
@@ -66,7 +66,7 @@ void setup(){
 
 
   //Interrupt for emergency stop button
-  attachInterrupt(digitalPinToInterrupt(7), E_stop, FALLING);
+  attachInterrupt(digitalPinToInterrupt(18), E_stop, FALLING);
 
   //Represents sending the signal for ride to run 1 time
 }
