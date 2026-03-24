@@ -22,7 +22,9 @@ const int switchPin = 3;
 const int BlueButtonPin = 4;
 const int GreenButtonPin = 5;
 const int YellowButtonPin = 6;
-const int RedButtonPin = 18; //verify if this is an interrupt pin
+const int IdlekeySwitchLED = 7;
+const int AMkeySwitchLED = 10;
+const int RedButtonPin = 18; 
 const int LiftMotorPin = 8;
 const int BreakMotorPin = 9;
 
@@ -36,6 +38,11 @@ int interrupt();
 
 void setup(){
 
+  //Activating pin used Idle Key switch LED
+  pinMode(IdlekeySwitchLED, OUTPUT);
+
+  //Activating pin used AM Key switch LED
+  pinMode(AMkeySwitchLED, OUTPUT);
 
   //Activating pin used for lift sensor
   pinMode(liftSensorPin, OUTPUT);
@@ -76,7 +83,7 @@ void setup(){
     digitalWrite(LiftMotorPin, HIGH);
     calculated timer when to turn off lift motor
     break_stop();
-    key = IDLE_STATE; //some kind of light that is only lit for idle state?
+    key = IDLE_STATE;
   }
     digitalWrite(LiftMotorPin, LOW);
   if(digitalRead(breakSensorPin) == HIGH){
@@ -127,8 +134,6 @@ int cycle_cont(){
       if (digitalRead(breakSensorPin) == HIGH){
         digitalWrite(LiftMotorPin, LOW);
         brake_stop(); 
-        //Set state to idle but then issue of having key in wrong state when e_stop is released
-        //Include in protocol to remove key frrom switch and then put it back in to reset the state of the system
         key = IDLE_STATE;
       }
     }
@@ -140,7 +145,6 @@ int cycle_cont(){
 void loop() {
   
   int switchState = digitalRead(switchPin);
-  
   
 
   //manual mode state
@@ -158,7 +162,21 @@ void loop() {
     cycle_once();
     dispatch = false;
     }
-
+// While light is on ride is in idle mode, Idle light takes priority over auto mode light, 
+//when light is off ride is in either auto or manual mode depending on key switch position
+if (key == IDLE_STATE) {  
+    digitalWrite(IdlekeySwitchLED, HIGH);
+    else {
+      digitalWrite(IdlekeySwitchLED, LOW);
+    }
+  }
+      //While light is on ride is in auto mode, when light is off ride is in manual mode ignore if in idle mode
+if (key == AUTO_STATE){
+      digitalWrite(AMkeySwitchLED, HIGH);
+    else {
+      digitalWrite(AMkeySwitchLED, LOW);
+}
+  }
     if (digitalRead(breakSensorPin) == HIGH){
       brake_stop();
     }
