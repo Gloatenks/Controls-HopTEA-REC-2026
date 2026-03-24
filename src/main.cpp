@@ -4,14 +4,10 @@
 int IDLE_STATE = 0;
 int MANUAL_STATE = 1;
 int AUTO_STATE = 2;
-
+int Timer = 0;
 
 //ride is idle, has been turned on, but no buttons have been pressed on control panel
 int key = IDLE_STATE;
-
-
-bool dispatch = false;
-bool misc = false;
 
 
 const int liftSensorPin = 1;
@@ -29,11 +25,11 @@ const int LiftMotorPin = 8;
 const int BreakMotorPin = 9;
 
 
-int cycle_once();
-int brake_stop();
-int jog_lift();
-int cycle_cont();
-int interrupt();
+void cycle_once();
+void brake_stop();
+void jog_lift();
+void cycle_cont();
+void E_stop();
 
 
 void setup(){
@@ -75,88 +71,107 @@ void setup(){
   //Interrupt for emergency stop button
   attachInterrupt(digitalPinToInterrupt(18), E_stop, FALLING);
 
-  //Represents sending the signal for ride to run 1 time
-}
-
-  int cycle_once(){
-  if (digitalRead(GreenButtonPin) == HIGH){
-    digitalWrite(LiftMotorPin, HIGH);
-    calculated timer when to turn off lift motor
-    break_stop();
-    key = IDLE_STATE;
-  }
-    digitalWrite(LiftMotorPin, LOW);
-  if(digitalRead(breakSensorPin) == HIGH){
-    digitalWrite(BreakMotorPin, HIGH);
-      return 0;
-    }
-  return 1;
 }
 
 //Represent sending the signal for breaks to activate
-int break_stop(){
-  if (digitalRead(breakSensorPin) == HIGH){
-      digitalWrite(BreakMotorPin, HIGH);
+void break_stop(){
+  while(digitalRead(breakSensorPin) == LOW){
+    delay(1);
     }
-  if (digitalRead(breakSensorPin) == LOW){
-      digitalWrite(BreakMotorPin, LOW);
-    }
+    delay(1000); //timer if necessary for when sensors senses cart to when breaks clamp down
+    digitalWrite(BreakMotorPin, HIGH);
+    key = IDLE_STATE;
   }
 
-//Represents sending the signal for lift to be manually activated
-//maybe change to while statement
-int jog_lift(){
-  if (digitalRead(YellowButtonPin) == HIGH){
-    digitalWrite(LiftMotorPin, HIGH);
-  else if (digitalRead(YellowButtonPin) == LOW){
-      digitalWrite(LiftMotorPin, LOW);    
-    }
+//Complete one cycle of the ride then stop and change state to idle 
+  void cycle_once(){
+  if (digitalRead(GreenButtonPin) == HIGH){
+      digitalWrite(BreakMotorPin, LOW);
+      digitalWrite(LiftMotorPin, HIGH);
+      // calculated timer when to turn off lift motor
+      break_stop();
+      key = IDLE_STATE;
   }
-  return;
+}
+//Represents sending the signal for lift to be manually activated
+void jog_lift(){
+  digitalWrite(LiftMotorPin, HIGH);
 }
 
 
 //Represents sending the signal for ride to run continously
-int cycle_cont(){
-  if (digitalRead(liftSensorPin) == HIGH){
+void cycle_cont(){
+  delay(1000); 
+  digitalWrite(BreakMotorPin, LOW);
+  while (key == AUTO_STATE && digitalRead(BlueButtonPin) == LOW){
       digitalWrite(LiftMotorPin, HIGH);
-      timer for experimentally found time
-      return 0;
+      break_stop();
+      delay(8000);
+      digitalWrite(BreakMotorPin, LOW);
+      delay(4000); //experimentally found time mess around with
+      digitalWrite(LiftMotorPin, HIGH);
+      //experimentally found time to bring to top
     }
-  return 1;
+          key = IDLE_STATE;
 }
 
 
 
-// E_stop function definition
+// E_stop function
   void E_stop() {
-    while (RedButtonPin == HIGH){
+      digitalWrite(LiftMotorPin, LOW);
       if (digitalRead(breakSensorPin) == HIGH){
-        digitalWrite(LiftMotorPin, LOW);
-        brake_stop(); 
-        key = IDLE_STATE;
+        break_stop();
+        while (!(key == MANUAL_STATE && digitalRead(BlueButtonPin) == LOW && digitalRead(GreenButtonPin) == LOW && digitalRead(YellowButtonPin) == LOW)){
+         if(key == MANUAL_STATE && digitalRead(BlueButtonPin) == HIGH && digitalRead(GreenButtonPin) == HIGH && digitalRead(YellowButtonPin) == HIGH){
+            break;
+          }
+          delay(1);
+          if (switchState == HIGH){
+          key = MANUAL_STATE;
+        }
+        Timer = 0;
+      }
+      if (digitalRead(breakSensorPin) == LOW && Timer < 15){
+        delay(1000); 
+        Timer += 1;
       }
     }
-      if (RedButtonPin == LOW){
-      return;
+      else if (digitalRead(breakSensorPin) == LOW && Timer >= 15){
+        while (!(key == MANUAL_STATE && digitalRead(BlueButtonPin) == LOW && digitalRead(GreenButtonPin) == LOW && digitalRead(YellowButtonPin) == LOW)){
+          if(key == MANUAL_STATE && digitalRead(BlueButtonPin) == HIGH && digitalRead(GreenButtonPin) == HIGH && digitalRead(YellowButtonPin) == HIGH){
+            break;
+          }
+          delay(1);
+          if (switchState == HIGH){
+          key = MANUAL_STATE;
+          }
+          if (digitalRead(breakSensorPin) == HIGH){
+          digitalWrite(BreakMotorPin, HIGH);
+        }
+        }
+        Timer = 0;
       }
-  }
+      if (key == MANUAL_STATE && digitalRead(BlueButtonPin) == HIGH){
+        key = IDLE_STATE;
+      }
+}
 
 void loop() {
   
   int switchState = digitalRead(switchPin);
   
 
-  //manual mode state
+  //manual mode state del
   if (switchState == HIGH){
     key = MANUAL_STATE;
   }
 
-  //auto mode state
+  //auto mode state del
   if (switchState == LOW){
     key = AUTO_STATE;
   }
-  //Manual mode functions
+  //Maybe del
   if (key == MANUAL_STATE){
     if(dispatch == true){
     cycle_once();
@@ -166,6 +181,7 @@ void loop() {
 //when light is off ride is in either auto or manual mode depending on key switch position
 if (key == IDLE_STATE) {  
     digitalWrite(IdlekeySwitchLED, HIGH);
+    digitalWrite(BreakMotorPin, HIGH);
     else {
       digitalWrite(IdlekeySwitchLED, LOW);
     }
@@ -180,40 +196,31 @@ if (key == AUTO_STATE){
     if (digitalRead(breakSensorPin) == HIGH){
       brake_stop();
     }
-//maybe change to if statement see while testing
-  while(misc == true){
-    jog_lift();
-  }
   }
 
-  //Auto mode functions
-  if (key == AUTO_STATE && dispatch == true) {
-  while (!misc) {
-    cycle_cont();
-    if (digitalRead(breakSensorPin) == HIGH){
-      break_stop();
-    }
-  }
+  
   //Change dispatch to false when cycle_cont is done
-  }
+  
+
+
   if (key == MANUAL_STATE && digitalRead(BlueButtonPin) == HIGH){
       break_stop();
     }
     else if (key == MANUAL_STATE && digitalRead(GreenButtonPin) == HIGH){
       cycle_once();
     }
+    //Physically unselect when done
     else if (key == MANUAL_STATE && digitalRead(YellowButtonPin) == HIGH){
       jog_lift();
-    }
-    else if (key == AUTO_STATE && digitalRead(BlueButtonPin) == HIGH){
-      break_stop();
     }
     else if (key == AUTO_STATE && digitalRead(GreenButtonPin) == HIGH){
       cycle_cont();
     }
-    else {
-      return;
+
+    else if (key == AUTO_STATE && digitalRead(BlueButtonPin) == HIGH){
+      break_stop();
     }
+   
   }
 
 
