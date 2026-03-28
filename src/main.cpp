@@ -11,7 +11,7 @@ int key = IDLE_STATE;
 
 
 const int liftSensorPin = 1;
-const int breakSensorPin = 2;
+const int brakeSensorPin = 2;
 
 
 const int switchPin = 3;
@@ -22,7 +22,7 @@ const int IdlekeySwitchLED = 7;
 const int AMkeySwitchLED = 10;
 const int RedButtonPin = 18; 
 const int LiftMotorPin = 8;
-const int BreakMotorPin = 9;
+const int BrakeMotorPin = 9;
 
 
 void cycle_once();
@@ -30,6 +30,7 @@ void brake_stop();
 void jog_lift();
 void cycle_cont();
 void E_stop();
+void cycle_brakes();
 
 
 void setup(){
@@ -44,8 +45,8 @@ void setup(){
   pinMode(liftSensorPin, OUTPUT);
 
 
-  //Activating pin used for break run sensor
-  pinMode(breakSensorPin, OUTPUT);
+  //Activating pin used for brake run sensor
+  pinMode(brakeSensorPin, OUTPUT);
 
 
   //Activating pinn used for Key-Lock switch
@@ -73,44 +74,51 @@ void setup(){
 
 }
 
-//Represent sending the signal for breaks to activate
-void break_stop(){
-  while(digitalRead(breakSensorPin) == LOW){
+//Waits for cart to trip brake sensor and then activates brakes and changes state to idle
+void brake_stop(){
+  while(digitalRead(brakeSensorPin) == LOW){
     delay(1);
-    }
-    delay(1000); //timer if necessary for when sensors senses cart to when breaks clamp down
-    digitalWrite(BreakMotorPin, HIGH);
+  }
+    delay(1000); 
+    digitalWrite(BrakeMotorPin, HIGH);
     key = IDLE_STATE;
   }
+
+//While brake button is held, brakes are active
+void cycle_brakes(){
+  while(digitalRead(BlueButtonPin) == HIGH){
+    digitalWrite(BrakeMotorPin, HIGH);
+  }
+    digitalWrite(BrakeMotorPin, LOW);
+}
 
 //Complete one cycle of the ride then stop and change state to idle 
   void cycle_once(){
   if (digitalRead(GreenButtonPin) == HIGH){
-      digitalWrite(BreakMotorPin, LOW);
+      digitalWrite(BrakeMotorPin, LOW);
       digitalWrite(LiftMotorPin, HIGH);
-      delay(15000); // calculated timer when to turn off lift motor
+      delay(15000); 
       digitalWrite(LiftMotorPin, LOW); 
-      break_stop();
+      brake_stop();
       key = IDLE_STATE;
   }
 }
-//Represents sending the signal for lift to be manually activated
+//Activates lift while button is held
 void jog_lift(){
   digitalWrite(LiftMotorPin, HIGH);
 }
 
-
-//Represents sending the signal for ride to run continously
+//Lets the ride run continuoulsy until brake button is pressed, then changes state to idle
 void cycle_cont(){
   delay(1000); 
-  digitalWrite(BreakMotorPin, LOW);
-  while (key == AUTO_STATE && digitalRead(BlueButtonPin) == LOW){
+  digitalWrite(BrakeMotorPin, LOW);
+  while (digitalRead(BlueButtonPin) == LOW){
       digitalWrite(LiftMotorPin, HIGH);
-      break_stop();
+      brake_stop();
       delay(8000);
-      digitalWrite(BreakMotorPin, LOW);
+      digitalWrite(BrakeMotorPin, LOW);
       digitalWrite(LiftMotorPin, HIGH);
-      delay(15000); //experimentally found time to bring to top
+      delay(15000); 
       digitalWrite(LiftMotorPin, LOW);
     }
           key = IDLE_STATE;
@@ -121,11 +129,11 @@ void cycle_cont(){
 // E_stop function
   void E_stop() {
       digitalWrite(LiftMotorPin, LOW);
-      if (digitalRead(breakSensorPin) == HIGH){
-        break_stop();
+      if (digitalRead(brakeSensorPin) == HIGH){
+        brake_stop();
         while (!(key == MANUAL_STATE && digitalRead(BlueButtonPin) == LOW && digitalRead(GreenButtonPin) == LOW && digitalRead(YellowButtonPin) == LOW)){
          if(key == MANUAL_STATE && digitalRead(BlueButtonPin) == HIGH && digitalRead(GreenButtonPin) == HIGH && digitalRead(YellowButtonPin) == HIGH){
-            break;
+            return;
           }
           delay(1);
           if (switchState == HIGH){
@@ -133,22 +141,22 @@ void cycle_cont(){
         }
         Timer = 0;
       }
-      if (digitalRead(breakSensorPin) == LOW && Timer < 15){
+      if (digitalRead(brakeSensorPin) == LOW && Timer < 15){
         delay(1000); 
         Timer += 1;
       }
     }
-      else if (digitalRead(breakSensorPin) == LOW && Timer >= 15){
+      else if (digitalRead(brakeSensorPin) == LOW && Timer >= 15){
         while (!(key == MANUAL_STATE && digitalRead(BlueButtonPin) == LOW && digitalRead(GreenButtonPin) == LOW && digitalRead(YellowButtonPin) == LOW)){
           if(key == MANUAL_STATE && digitalRead(BlueButtonPin) == HIGH && digitalRead(GreenButtonPin) == HIGH && digitalRead(YellowButtonPin) == HIGH){
-            break;
+            return;
           }
           delay(1);
           if (switchState == HIGH){
           key = MANUAL_STATE;
           }
-          if (digitalRead(breakSensorPin) == HIGH){
-          digitalWrite(BreakMotorPin, HIGH);
+          if (digitalRead(brakeSensorPin) == HIGH){
+          digitalWrite(BrakeMotorPin, HIGH);
         }
         }
         Timer = 0;
@@ -182,7 +190,7 @@ void loop() {
 //when light is off ride is in either auto or manual mode depending on key switch position
 if (key == IDLE_STATE) {  
     digitalWrite(IdlekeySwitchLED, HIGH);
-    digitalWrite(BreakMotorPin, HIGH);
+    digitalWrite(BrakeMotorPin, HIGH);
     else {
       digitalWrite(IdlekeySwitchLED, LOW);
     }
@@ -194,7 +202,7 @@ if (key == AUTO_STATE){
       digitalWrite(AMkeySwitchLED, LOW);
 }
   }
-    if (digitalRead(breakSensorPin) == HIGH){
+    if (digitalRead(brakeSensorPin) == HIGH){
       brake_stop();
     }
   }
@@ -204,23 +212,27 @@ if (key == AUTO_STATE){
   
 
 
-  if (key == MANUAL_STATE && digitalRead(BlueButtonPin) == HIGH){
-      break_stop();
+  if (key == AUTO_STATE && digitalRead(YellowButtonPin) == HIGH){
+      brake_stop();
     }
     else if (key == MANUAL_STATE && digitalRead(GreenButtonPin) == HIGH){
       cycle_once();
     }
-    //Physically unselect when done
     else if (key == MANUAL_STATE && digitalRead(YellowButtonPin) == HIGH){
       jog_lift();
     }
     else if (key == AUTO_STATE && digitalRead(GreenButtonPin) == HIGH){
       cycle_cont();
     }
-
     else if (key == AUTO_STATE && digitalRead(BlueButtonPin) == HIGH){
-      break_stop();
+      cycle_brakes();
     }
+    else if (key == MANUAL_STATE && digitalRead(BlueButtonPin) == HIGH){
+       return;
+     }
+     else{
+        return;
+     }
    
   }
 
