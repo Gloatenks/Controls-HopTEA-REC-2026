@@ -88,7 +88,8 @@ void break_stop(){
   if (digitalRead(GreenButtonPin) == HIGH){
       digitalWrite(BreakMotorPin, LOW);
       digitalWrite(LiftMotorPin, HIGH);
-      // calculated timer when to turn off lift motor
+      delay(15000); // calculated timer when to turn off lift motor
+      digitalWrite(LiftMotorPin, LOW); 
       break_stop();
       key = IDLE_STATE;
   }
@@ -108,9 +109,9 @@ void cycle_cont(){
       break_stop();
       delay(8000);
       digitalWrite(BreakMotorPin, LOW);
-      delay(4000); //experimentally found time mess around with
       digitalWrite(LiftMotorPin, HIGH);
-      //experimentally found time to bring to top
+      delay(15000); //experimentally found time to bring to top
+      digitalWrite(LiftMotorPin, LOW);
     }
           key = IDLE_STATE;
 }
