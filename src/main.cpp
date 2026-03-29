@@ -18,8 +18,8 @@ const int switchPin = 3;
 const int BlueButtonPin = 4;
 const int GreenButtonPin = 5;
 const int YellowButtonPin = 6;
-const int IdlekeySwitchLED = 7;
-const int AMkeySwitchLED = 10;
+const int AutokeySwitchLED = 10;
+const int ManualkeySwitchLED = 11;
 const int RedButtonPin = 18; 
 const int LiftMotorPin = 8;
 const int BrakeMotorPin = 9;
@@ -34,8 +34,11 @@ void updateLED();
 
 void setup(){
 
-  //Activating pin used AM Key switch LED
-  pinMode(AMkeySwitchLED, OUTPUT);
+  //Activating pin used Auto Key switch LED
+  pinMode(AutokeySwitchLED, OUTPUT);
+
+  //Activating pin used Auto Key switch LED
+  pinMode(ManualkeySwitchLED, OUTPUT);
 
   //Activating pin used for lift sensor
   pinMode(liftSensorPin, OUTPUT);
@@ -74,23 +77,25 @@ void setup(){
 
 }
   
-//While light is on ride is in auto mode, when light is off ride is in manual mode ignore if in idle mode
+//While LED next to either key switch is on, the ride is in that mode, when LED is off ride is in idle mode
 void updateLED(){
   if (key == IDLE_STATE) {  
-    digitalWrite(IdlekeySwitchLED, HIGH);
+    digitalWrite(ManualkeySwitchLED, LOW);
+    digitalWrite(AutokeySwitchLED, LOW);
     digitalWrite(BrakeMotorPin, HIGH);
   }
     else if (switchState == HIGH){
-      digitalWrite(AMkeySwitchLED, HIGH);
+      digitalWrite(ManualkeySwitchLED, HIGH);
+      digitalWrite(AutokeySwitchLED, LOW);
     }
     else if(switchState == LOW){
-      digitalWrite(AMkeySwitchLED, LOW);
+      digitalWrite(AutokeySwitchLED, HIGH);
+      digitalWrite(ManualkeySwitchLED, LOW);
   }
   else{
     return;
   }
 }
-      //While light is on ride is in auto mode, when light is off ride is in manual mode ignore if in idle mode
 
 //Waits for cart to trip brake sensor and then activates brakes and changes state to idle
 void brake_stop(){
