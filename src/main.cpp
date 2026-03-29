@@ -80,10 +80,10 @@ void updateLED(){
     digitalWrite(IdlekeySwitchLED, HIGH);
     digitalWrite(BrakeMotorPin, HIGH);
   }
-    else if (AMswitchstate == HIGH){
+    else if (switchState == HIGH){
       digitalWrite(AMkeySwitchLED, HIGH);
     }
-    else if(AMswitchstate == LOW){
+    else if(switchState == LOW){
       digitalWrite(AMkeySwitchLED, LOW);
   }
   else{
